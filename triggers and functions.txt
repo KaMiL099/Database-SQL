@@ -1,0 +1,151 @@
+CREATE TRIGGER dbo.dodaniepw
+ON dbo.Dokument_PW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+declare @tempproduct as int = (select PWIloscPrzyjetegoTowaru
+from inserted);
+declare @tempidproduktu as int = (select ProduktID
+from inserted);
+update Produkty set PIloscProduktu += @tempproduct
+where ProduktID = @tempidproduktu;
+END
+GO
+CREATE TRIGGER dbo.odejmowanierw
+ON dbo.Dokument_RW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+declare @tempproduct as int = (select RWIloscWydanegoTowaru
+from inserted);
+declare @tempidproduktu as int = (select ProduktID
+from inserted);
+update Produkty set PIloscProduktu -= @tempproduct
+where ProduktID = @tempidproduktu;
+END
+GO
+CREATE FUNCTION StanDokumentuPW (@IDDOC INT)
+RETURNS varchar
+AS
+BEGIN
+DECLARE @OCZEKUJACY AS varchar = 'Oczekujacy';
+DECLARE @ZAKONCZONY AS varchar = 'Zakonczony';
+DECLARE @WymagaIngerencji AS varchar = 'WymagaIngerencji';
+IF((Select PWOpis
+from Dokument_PW
+WHERE PWDokumentID = @IDDOC) = @OCZEKUJACY)
+BEGIN
+return @OCZEKUJACY
+END ;
+ELSE IF ((Select PWOpis
+from Dokument_PW
+WHERE PWDokumentID = @IDDOC) = @ZAKONCZONY)
+BEGIN
+return @ZAKONCZONY
+END;
+RETURN @WymagaIngerencji
+END
+CREATE FUNCTION StanDokumentuRW (@IDDOCRW INT)
+RETURNS varchar
+AS
+BEGIN
+DECLARE @OCZEKUJACY AS varchar = 'Oczekujacy';
+DECLARE @ZAKONCZONY AS varchar = 'Zakonczony';
+DECLARE @WymagaIngerencji AS varchar = 'WymagaIngerencji';
+IF((Select RWOpis
+from Dokument_RW
+WHERE RWDokumentID = @IDDOCRW) = @OCZEKUJACY)
+BEGIN
+return @OCZEKUJACY
+END ;
+ELSE IF ((Select RWOpis
+from Dokument_RW
+WHERE RWDokumentID = @IDDOCRW) = @ZAKONCZONY)
+BEGIN
+return @ZAKONCZONY
+END;
+RETURN @WymagaIngerencji
+END
+CREATE FUNCTION WartoscProduktuWMagazynie (@IDprodukt INT)
+RETURNS float
+AS
+BEGIN
+DECLARE @Wartosc AS float;
+SET @Wartosc = ( Select (PIloscProduktu*PCenaJednostkowaProduktu)
+From Produkty
+Where ProduktID=@IDprodukt
+)
+return @Wartosc
+END
+CREATE FUNCTION ZajetaPojemnoscWzgledemMaksymalnejPojemnosci()
+RETURNS float
+AS
+BEGIN
+DECLARE @PojemnoscZajeta AS float;
+DECLARE @PojemnoscMaksymalna AS float=10000;
+SET @PojemnoscZajeta = (SELECT
+SUM(PIloscProduktu*PIloscZajmowanegoMiejsca)
+From Produkty
+Group BY ProduktID)
+DECLARE @WYNIK AS float;
+SET @WYNIK = (@PojemnoscZajeta/@PojemnoscMaksymalna)
+RETURN @WYNIK
+END
+Create FUNCTION IloscDanegoProduktu(@idproduktu INT)
+RETURNS INT
+AS
+BEGIN
+DECLARE @ILOSC as int;
+SET @ILOSC = (SELECT PIloscProduktu
+from Produkty
+WHERE ProduktID=@idproduktu)
+RETURN @ILOSC
+END
+CREATE FUNCTION SprawdzMagazyn()
+RETURNS varchar
+AS
+BEGIN
+declare @Przepelniony AS varchar ='Przepelniony';
+declare @Nieprzepelniony AS varchar='Nieprzepelniony';
+DECLARE @PojemnoscMaksymalna AS float=10000;
+DECLARE @PojemnoscZajeta AS float;
+SET @PojemnoscZajeta = (SELECT
+SUM(PIloscProduktu*PIloscZajmowanegoMiejsca)
+From Produkty
+Group BY ProduktID)
+IF (@PojemnoscZajeta>@PojemnoscMaksymalna)
+BEGIN
+return @Przepelniony
+END
+Return @Nieprzepelniony
+END
+CREATE FUNCTION IloscDokumentowPW(@STARDATE datetime ,@ENDDATE datetime)
+RETURNS int
+AS
+BEGIN
+DECLARE @ILOSC AS int;
+SET @ILOSC = (SELECT Count(PWDokumentID)
+FROM Dokument_PW
+WHERE PWDataWystawienia BETWEEN @STARDATE AND @ENDDATE)
+return @ILOSC
+END
+CREATE FUNCTION IloscDokumentowRW(@STARDATE datetime ,@ENDDATE datetime)
+RETURNS int
+AS
+BEGIN
+DECLARE @ILOSC AS int;
+SET @ILOSC = (SELECT Count(RWDokumentID)
+FROM Dokument_RW
+WHERE RWDataWystawienia BETWEEN @STARDATE AND @ENDDATE)
+return @ILOSC
+END
+Create Procedure dbo.RankingProduktowwzgledemdokumentow
+AS
+SELECT TOP 10 Produkty.ProduktID, (Count(PWDokumentID)+COUNT(RWDokumentID))
+as iloscdokumentow
+FROM Produkty JOIN Dokument_PW ON Produkty.ProduktID=Dokument_PW.ProduktID
+join Dokument_RW ON Produkty.ProduktID=Dokument_RW.ProduktID
+Group By Produkty.ProduktID
+Order by Count(PWDokumentID)+COUNT(RWDokumentID)desc

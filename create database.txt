@@ -1,0 +1,126 @@
+CREATE SCHEMA baza
+GO
+CREATE TABLE [Dokument_PW] (
+PWDokumentID int NOT NULL,
+PWDataWystawienia datetime NOT NULL,
+PWDataDostarczeniaTowaru datetime NOT NULL,
+PWIloscTowaru int NOT NULL,
+PWIloscPrzyjetegoTowaru int NOT NULL,
+PWOpis varchar(255),
+PWStan varchar(20) NOT NULL,
+PWPochodzenieProduktu varchar(100) NOT NULL,
+ProduktID int NOT NULL,
+PRIMARY KEY (PWDokumentID)
+)
+GO
+CREATE TABLE [Dokument_RW] (
+RWDokumentID int NOT NULL,
+RWDataWystawienia datetime NOT NULL,
+RWNazwaTowaru varchar(100) NOT NULL,
+RWDataWydaniaTowaru datetime NOT NULL,
+RWIloscTowaru int NOT NULL,
+RWIloscWydanegoTowaru int NOT NULL,
+RWOpis varchar(255),
+RWStan varchar(20) NOT NULL,
+ProduktID int NOT NULL,
+PRIMARY KEY (RWDokumentID)
+)
+GO
+CREATE TABLE [PWPracownik] (
+PWDokumentID int NOT NULL,
+PracownikID int NOT NULL,
+PRIMARY KEY (PWDokumentID,PracownikID)
+)
+GO
+CREATE TABLE [RWPracownik] (
+RWDokumentID int NOT NULL,
+PracownikID int NOT NULL,
+PRIMARY KEY (RWDokumentID,PracownikID)
+)
+GO
+CREATE TABLE [Pracownik] (
+PracownikID int NOT NULL,
+PNazwisko varchar(40) NOT NULL,
+PImie varchar(30) NOT NULL,
+PStanowisko varchar(30) NOT NULL,
+PDataUrodzenia datetime NOT NULL,
+PMiejscowosc varchar(100) NOT NULL,
+PUlica varchar(60),
+PNumerMieszkania int NOT NULL,
+PKodPocztowy varchar(10),
+PIDKraj int NOT NULL,
+PTelefon varchar(20),
+PDataZatrudnienia datetime NOT NULL,
+PRIMARY KEY (PracownikID)
+)
+GO
+CREATE TABLE [Produkty] (
+ProduktID int NOT NULL,
+PNazwaProduktu varchar(100) NOT NULL,
+PIDKategoria int NOT NULL,
+PIloscProduktu int NOT NULL,
+PCenaJednostkowaProduktu money NOT NULL,
+PIloscZajmowanegoMiejsca float NOT NULL,
+PRIMARY KEY (ProduktID)
+)
+GO
+CREATE TABLE [Kategorie] (
+IDKategoria int NOT NULL,
+KNazwaKategori varchar(100) NOT NULL,
+PRIMARY KEY (IDKategoria)
+)
+GO
+CREATE TABLE [Kraje] (
+IDKraj int NOT NULL,
+KNazwaKraju varchar(60) NOT NULL,
+PRIMARY KEY (IDKraj)
+)
+GO
+ALTER TABLE [Dokument_PW] WITH CHECK ADD CONSTRAINT [Dokument_PW_1] FOREIGN KEY
+([ProduktID]) REFERENCES [Produkty]([ProduktID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [Dokument_PW] CHECK CONSTRAINT [Dokument_PW_1]
+GO
+ALTER TABLE [Dokument_RW] WITH CHECK ADD CONSTRAINT [Dokument_RW_2] FOREIGN KEY
+([ProduktID]) REFERENCES [Produkty]([ProduktID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [Dokument_RW] CHECK CONSTRAINT [Dokument_RW_2]
+GO
+ALTER TABLE [PWPracownik] WITH CHECK ADD CONSTRAINT [PWPracownik_3] FOREIGN KEY
+([PWDokumentID]) REFERENCES [Dokument_PW]([PWDokumentID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [PWPracownik] CHECK CONSTRAINT [PWPracownik_3]
+GO
+ALTER TABLE [PWPracownik] WITH CHECK ADD CONSTRAINT [PWPracownik_4] FOREIGN KEY
+([PracownikID]) REFERENCES [Pracownik]([PracownikID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [PWPracownik] CHECK CONSTRAINT [PWPracownik_4]
+GO
+ALTER TABLE [RWPracownik] WITH CHECK ADD CONSTRAINT [RWPracownik_5] FOREIGN KEY
+([RWDokumentID]) REFERENCES [Dokument_RW]([RWDokumentID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [RWPracownik] CHECK CONSTRAINT [RWPracownik_5]
+GO
+ALTER TABLE [RWPracownik] WITH CHECK ADD CONSTRAINT [RWPracownik_6] FOREIGN KEY
+([PracownikID]) REFERENCES [Pracownik]([PracownikID])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [RWPracownik] CHECK CONSTRAINT [RWPracownik_6]
+GO
+ALTER TABLE [Pracownik] WITH CHECK ADD CONSTRAINT [Pracownik_7] FOREIGN KEY ([PIDKraj])
+REFERENCES [Kraje]([IDKraj])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [Pracownik] CHECK CONSTRAINT [Pracownik_7]
+GO
+ALTER TABLE [Produkty] WITH CHECK ADD CONSTRAINT [Produkty_8] FOREIGN KEY ([PIDKategoria])
+REFERENCES [Kategorie]([IDKategoria])
+ON UPDATE CASCADE
+GO
+ALTER TABLE [Produkty] CHECK CONSTRAINT [Produkty_8]
+GO

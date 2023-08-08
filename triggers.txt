@@ -1,0 +1,165 @@
+CREATE TRIGGER dbo.CzyMniejszeNizZeroPWIloscTowaru
+ON dbo.Dokument_PW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PWIloscTowaru
+FROM inserted) <= 0
+BEGIN
+RAISERROR('PWIloscTowaru mniejsze badz rowne 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.CzyMniejszeNizZeroRWIloscTowaru
+ON dbo.Dokument_RW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT RWIloscTowaru
+FROM inserted) <= 0
+BEGIN
+RAISERROR('RWIloscTowaru mniejsze badz rowne 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.CzyMniejszeNizZeroIloscZajmowanegoMiejsca
+ON dbo.Produkty
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PIloscZajmowanegoMiejsca
+FROM inserted) <= 0
+BEGIN
+RAISERROR('PIloscZajmowanegoMiejsca mniejsze badz rowne 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.CzyMniejszeNizZeroIloscPrzyjetegoTowaru
+ON dbo.Dokument_PW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PWIloscPrzyjetegoTowaru
+FROM inserted) < 0
+BEGIN
+RAISERROR('PWIloscPrzyjetegoTowaru mniejsze niz 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.CzyMniejszeNizZeroIloscWydanegoTowaru
+ON dbo.Dokument_RW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT RWIloscWydanegoTowaru
+FROM inserted) < 0
+BEGIN
+RAISERROR('RWIloscWydanegoTowaru mniejsze niz 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.CzyMniejszeNizZeroIloscProduktu
+ON dbo.Produkty
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PIloscProduktu
+FROM inserted) < 0
+BEGIN
+RAISERROR('PIloscProduktu mniejsze niz 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.CzyMniejszeNizZeroCenaJednostkowaProduktu
+ON dbo.Produkty
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PCenaJednostkowaProduktu
+FROM inserted) < 0
+BEGIN
+RAISERROR('PCenaJednostkowaProduktu mniejsze niz 0',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.SprawdzenieDatyUPracownika
+ON dbo.Pracownik
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PDataUrodzenia
+FROM inserted) > (SELECT PDataZatrudnienia
+FROM inserted)
+BEGIN
+RAISERROR('Data urodzenia nie może być większa niż data
+zatrudnienia',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.SprawdzenieIlosciPW
+ON dbo.Dokument_PW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT PWIloscTowaru
+FROM inserted) < (SELECT PWIloscPrzyjetegoTowaru
+FROM inserted)
+BEGIN
+RAISERROR('PWIloscTowaru mniejsze PWIloscPrzyjetegoTowaru',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.SprawdzenieIlosciRW
+ON dbo.Dokument_RW
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+IF (SELECT RWIloscTowaru
+FROM inserted) < (SELECT RWIloscWydanegoTowaru
+FROM inserted)
+BEGIN
+RAISERROR('RWIloscTowaru mniejsze RWIloscPrzyjetegoTowaru',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
+CREATE TRIGGER dbo.SprawdzeniePojemnosciMagazynu
+ON dbo.Produkty
+FOR INSERT
+NOT FOR REPLICATION
+AS
+BEGIN
+DECLARE @pojemnoscmagazynu integer = 10000
+DECLARE @IloscProduktow integer = (SELECT
+SUM(PIloscProduktu*PIloscZajmowanegoMiejsca)
+FROM dbo.Produkty
+Group BY ProduktID
+)
+IF
+((SELECT PIloscProduktu*PIloscZajmowanegoMiejsca
+FROM inserted)+@IloscProduktow) < @pojemnoscmagazynu
+BEGIN
+RAISERROR('Przekroczono pojemnosc magazynu',16,1);
+ROLLBACK TRANSACTION;
+END
+END
+GO
